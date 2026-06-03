@@ -21,6 +21,94 @@
             padding: 0;
             margin: 0;
         }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 85%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #007bff;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 22px;
+        }
+        .modal-close {
+            color: #999;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover {
+            color: #333;
+            background-color: #f0f0f0;
+            border-radius: 50%;
+        }
+        .modal-body {
+            max-height: 400px;
+            overflow-y: auto;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .modal-body table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .modal-body table tr {
+            border-bottom: 1px solid #eee;
+        }
+        .modal-body table td {
+            padding: 10px;
+        }
+        .modal-body table td:first-child {
+            font-weight: 600;
+            color: #007bff;
+            width: 40%;
+        }
+        .modal-body table td:last-child {
+            word-break: break-word;
+        }
         </style>
         <title></title>
     </head>
@@ -55,6 +143,29 @@
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        
+        // Modal Functions
+        function openFeatureModal(title, content) {
+            document.getElementById('modalTitle').textContent = title || 'Detail Informasi';
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('featureModal').style.display = 'block';
+        }
+        function closeFeatureModal() {
+            document.getElementById('featureModal').style.display = 'none';
+        }
+        window.onclick = function(event) {
+            var modal = document.getElementById('featureModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        // Keyboard shortcut to close modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeFeatureModal();
+            }
+        });
+        
         // remove popup's row if "visible-with-data"
         function removeEmptyRowsFromPopupContent(content, feature) {
          var tempDiv = document.createElement('div');
@@ -160,20 +271,22 @@
         function pop_SKMSUB_DAS_2(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Sub_DAS'] !== null ? autolinker.link(String(feature.properties['Sub_DAS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Sub DAS</strong></td>\
+                        <td>' + (feature.properties['Sub_DAS'] !== null ? autolinker.link(String(feature.properties['Sub_DAS']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['pjgDAS_km_'] !== null ? autolinker.link(String(feature.properties['pjgDAS_km_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Panjang DAS (km)</strong></td>\
+                        <td>' + (feature.properties['pjgDAS_km_'] !== null ? autolinker.link(String(feature.properties['pjgDAS_km_']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['luasDAS_ha'] !== null ? autolinker.link(String(feature.properties['luasDAS_ha']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Luas DAS (ha)</strong></td>\
+                        <td>' + (feature.properties['luasDAS_ha'] !== null ? autolinker.link(String(feature.properties['luasDAS_ha']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('SKM-SUB_DAS', content);
+            });
         }
 
         function style_SKMSUB_DAS_2_0(feature) {
@@ -357,56 +470,30 @@
         function pop_banjir_2020_3(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama</strong></td>\
+                        <td>' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Tanggal</strong></td>\
+                        <td>' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['GM_TYPE'] !== null ? autolinker.link(String(feature.properties['GM_TYPE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Tipe Area</strong></td>\
+                        <td>' + (feature.properties['GM_TYPE'] !== null ? autolinker.link(String(feature.properties['GM_TYPE']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['CLOSED'] !== null ? autolinker.link(String(feature.properties['CLOSED']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Ditutup</strong></td>\
+                        <td>' + (feature.properties['CLOSED'] !== null ? autolinker.link(String(feature.properties['CLOSED']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['BORDER_STY'] !== null ? autolinker.link(String(feature.properties['BORDER_STY']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['BORDER_COL'] !== null ? autolinker.link(String(feature.properties['BORDER_COL']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['BORDER_WID'] !== null ? autolinker.link(String(feature.properties['BORDER_WID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FILL_STYLE'] !== null ? autolinker.link(String(feature.properties['FILL_STYLE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FILL_COLOR'] !== null ? autolinker.link(String(feature.properties['FILL_COLOR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FILL_ALPHA'] !== null ? autolinker.link(String(feature.properties['FILL_ALPHA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['LABEL_POS'] !== null ? autolinker.link(String(feature.properties['LABEL_POS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FONT_SIZE'] !== null ? autolinker.link(String(feature.properties['FONT_SIZE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FONT_COLOR'] !== null ? autolinker.link(String(feature.properties['FONT_COLOR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FONT_CHARS'] !== null ? autolinker.link(String(feature.properties['FONT_CHARS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FONT_WEIGH'] !== null ? autolinker.link(String(feature.properties['FONT_WEIGH']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Warna Isi</strong></td>\
+                        <td>' + (feature.properties['FILL_COLOR'] !== null ? autolinker.link(String(feature.properties['FILL_COLOR']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('Banjir 2020', content);
+            });
         }
 
         function style_banjir_2020_3_0() {
@@ -441,56 +528,30 @@
         function pop_skm_4(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama</strong></td>\
+                        <td>' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['GM_LAYER'] !== null ? autolinker.link(String(feature.properties['GM_LAYER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Tipe Area</strong></td>\
+                        <td>' + (feature.properties['GM_TYPE'] !== null ? autolinker.link(String(feature.properties['GM_TYPE']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['GM_TYPE'] !== null ? autolinker.link(String(feature.properties['GM_TYPE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Layer</strong></td>\
+                        <td>' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Panjang</strong></td>\
+                        <td>' + (feature.properties['LENGTH'] !== null ? autolinker.link(String(feature.properties['LENGTH']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['ANAK_SU_ID'] !== null ? autolinker.link(String(feature.properties['ANAK_SU_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['SUNGAI_ID'] !== null ? autolinker.link(String(feature.properties['SUNGAI_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['FID_'] !== null ? autolinker.link(String(feature.properties['FID_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Entity'] !== null ? autolinker.link(String(feature.properties['Entity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Color'] !== null ? autolinker.link(String(feature.properties['Color']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Linetype'] !== null ? autolinker.link(String(feature.properties['Linetype']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Elevation'] !== null ? autolinker.link(String(feature.properties['Elevation']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['LineWt'] !== null ? autolinker.link(String(feature.properties['LineWt']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['RefName'] !== null ? autolinker.link(String(feature.properties['RefName']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['LENGTH'] !== null ? autolinker.link(String(feature.properties['LENGTH']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['BEARING'] !== null ? autolinker.link(String(feature.properties['BEARING']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Azimut</strong></td>\
+                        <td>' + (feature.properties['BEARING'] !== null ? autolinker.link(String(feature.properties['BEARING']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('SKM', content);
+            });
         }
 
         function style_skm_4_0() {
@@ -523,23 +584,22 @@
         function pop_genangan_5(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Tipe Area</strong></td>\
+                        <td>' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Panjang</strong></td>\
+                        <td>' + (feature.properties['Shape_Leng'] !== null ? autolinker.link(String(feature.properties['Shape_Leng']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? autolinker.link(String(feature.properties['Shape_Leng']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Luas</strong></td>\
+                        <td>' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('Genangan', content);
+            });
         }
 
         function style_genangan_5_0() {
@@ -574,26 +634,26 @@
         function pop_trekdayung_6(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Tipe Area</strong></td>\
+                        <td>' + (feature.properties['LAYER'] !== null ? autolinker.link(String(feature.properties['LAYER']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['ELEVATION'] !== null ? autolinker.link(String(feature.properties['ELEVATION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Elevasi</strong></td>\
+                        <td>' + (feature.properties['ELEVATION'] !== null ? autolinker.link(String(feature.properties['ELEVATION']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Panjang</strong></td>\
+                        <td>' + (feature.properties['Shape_Leng'] !== null ? autolinker.link(String(feature.properties['Shape_Leng']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? autolinker.link(String(feature.properties['Shape_Leng']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Luas</strong></td>\
+                        <td>' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('Trek Dayung', content);
+            });
         }
 
         function style_trekdayung_6_0() {
@@ -628,29 +688,34 @@
         function pop_PosSupan_7(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['No'] !== null ? autolinker.link(String(feature.properties['No']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>No</strong></td>\
+                        <td>' + (feature.properties['No'] !== null ? autolinker.link(String(feature.properties['No']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['X'] !== null ? autolinker.link(String(feature.properties['X']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Longitude (X)</strong></td>\
+                        <td>' + (feature.properties['X'] !== null ? autolinker.link(String(feature.properties['X']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Y'] !== null ? autolinker.link(String(feature.properties['Y']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Latitude (Y)</strong></td>\
+                        <td>' + (feature.properties['Y'] !== null ? autolinker.link(String(feature.properties['Y']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Nama_EWS'] !== null ? autolinker.link(String(feature.properties['Nama_EWS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama EWS</strong></td>\
+                        <td>' + (feature.properties['Nama_EWS'] !== null ? autolinker.link(String(feature.properties['Nama_EWS']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Nama_Sehar'] !== null ? autolinker.link(String(feature.properties['Nama_Sehar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama Sehari-hari</strong></td>\
+                        <td>' + (feature.properties['Nama_Sehar'] !== null ? autolinker.link(String(feature.properties['Nama_Sehar']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Pembangun'] !== null ? autolinker.link(String(feature.properties['Pembangun']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Pembangun</strong></td>\
+                        <td>' + (feature.properties['Pembangun'] !== null ? autolinker.link(String(feature.properties['Pembangun']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('Pos Supan', content);
+            });
         }
 
         function style_PosSupan_7_0() {
@@ -692,29 +757,34 @@
         function pop_PosUPB_8(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['No'] !== null ? autolinker.link(String(feature.properties['No']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>No</strong></td>\
+                        <td>' + (feature.properties['No'] !== null ? autolinker.link(String(feature.properties['No']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['X'] !== null ? autolinker.link(String(feature.properties['X']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Longitude (X)</strong></td>\
+                        <td>' + (feature.properties['X'] !== null ? autolinker.link(String(feature.properties['X']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Y'] !== null ? autolinker.link(String(feature.properties['Y']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Latitude (Y)</strong></td>\
+                        <td>' + (feature.properties['Y'] !== null ? autolinker.link(String(feature.properties['Y']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Nama_EWS'] !== null ? autolinker.link(String(feature.properties['Nama_EWS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama EWS</strong></td>\
+                        <td>' + (feature.properties['Nama_EWS'] !== null ? autolinker.link(String(feature.properties['Nama_EWS']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Nama_Sehar'] !== null ? autolinker.link(String(feature.properties['Nama_Sehar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama Sehari-hari</strong></td>\
+                        <td>' + (feature.properties['Nama_Sehar'] !== null ? autolinker.link(String(feature.properties['Nama_Sehar']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Pembangun'] !== null ? autolinker.link(String(feature.properties['Pembangun']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Pembangun</strong></td>\
+                        <td>' + (feature.properties['Pembangun'] !== null ? autolinker.link(String(feature.properties['Pembangun']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('Pos UPB', content);
+            });
         }
 
         function style_PosUPB_8_0() {
@@ -756,29 +826,34 @@
         function pop_posews_9(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['No'] !== null ? autolinker.link(String(feature.properties['No']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>No</strong></td>\
+                        <td>' + (feature.properties['No'] !== null ? autolinker.link(String(feature.properties['No']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['X'] !== null ? autolinker.link(String(feature.properties['X']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Longitude (X)</strong></td>\
+                        <td>' + (feature.properties['X'] !== null ? autolinker.link(String(feature.properties['X']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Y'] !== null ? autolinker.link(String(feature.properties['Y']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Latitude (Y)</strong></td>\
+                        <td>' + (feature.properties['Y'] !== null ? autolinker.link(String(feature.properties['Y']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Nama_EWS'] !== null ? autolinker.link(String(feature.properties['Nama_EWS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama EWS</strong></td>\
+                        <td>' + (feature.properties['Nama_EWS'] !== null ? autolinker.link(String(feature.properties['Nama_EWS']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Nama_Sehar'] !== null ? autolinker.link(String(feature.properties['Nama_Sehar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Nama Sehari-hari</strong></td>\
+                        <td>' + (feature.properties['Nama_Sehar'] !== null ? autolinker.link(String(feature.properties['Nama_Sehar']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['Pembangun'] !== null ? autolinker.link(String(feature.properties['Pembangun']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td><strong>Pembangun</strong></td>\
+                        <td>' + (feature.properties['Pembangun'] !== null ? autolinker.link(String(feature.properties['Pembangun']).replace(/'/g, '\'').toLocaleString()) : '-') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
+            layer.on('click', function() {
+                openFeatureModal('Pos EWS', content);
+            });
         }
 
         function style_posews_9_0() {
@@ -906,6 +981,16 @@
         map.on("layerremove", function(){
             resetLabels([layer_SKMSUB_DAS_2,layer_PosSupan_7,layer_PosUPB_8,layer_posews_9]);
         });
-        </script>        
+        </script>
+    <div id="featureModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Detail Informasi</h2>
+                <button class="modal-close" onclick="closeFeatureModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
     </body>
 </html>
